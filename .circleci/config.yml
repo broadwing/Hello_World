@@ -14,6 +14,6 @@ workflows:
           region: AWS_REGION_ENV_VAR_NAME
           dockerfile: "./frontend/Dockerfile"
           path: "./base-project"
-          workspace-root: "./frontend/"
+          workspace-root: "./base-project/frontend/"
           tag: "${CIRCLE_SHA1}"
           
