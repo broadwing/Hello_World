@@ -8,8 +8,8 @@ executors:
 jobs: 
   build-and-push:
     executor: default-executor
-    working_directory: ./base-project/frontend
     steps: 
+      - run: cd ./base-project/frontend
       - aws-ecr/build-and-push-image:
           repo: "${AWS_RESOURCE_NAME_PREFIX}"
           account-url: AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME
