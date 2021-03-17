@@ -2,7 +2,7 @@ version: 2.1
 orbs:
   aws-ecr: circleci/aws-ecr@6.15.3
 build:
-  context: ./frontend
+  context: ./base-project/frontend
 workflows:
   build-and-deploy:
     jobs:
