@@ -11,16 +11,26 @@ jobs:
     steps: 
       - checkout
       - setup_remote_docker:
+          docker_layer_caching: true
           version: 19.03.14
-      - run: cd ./base-project/frontend
-      - aws-ecr/build-and-push-image:
-          repo: "${AWS_RESOURCE_NAME_PREFIX}"
+      - aws-ecr/ecr-login:
           account-url: AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME
           aws-access-key-id: ACCESS_KEY_ID_ENV_VAR_NAME
           aws-secret-access-key: SECRET_ACCESS_KEY_ENV_VAR_NAME
           region: AWS_REGION_ENV_VAR_NAME
-          tag: "${CIRCLE_SHA1}"
+      - run: 
+          name: build image
+          command: | 
+            cd ./base-project/frontend
+            docker build -t ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME}:${CIRCLE_SHA1} .
+      - run: 
+          name: push images
+          command: | 
+            docker push ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME}:${CIRCLE_SHA1}
+            docker tag ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME}:${CIRCLE_SHA1} ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME}:latest
+            docker push ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME}:latest
 workflows:
   build-and-push: 
     jobs:
       - build-and-push
+          
