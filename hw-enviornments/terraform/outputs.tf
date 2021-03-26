@@ -1,6 +1,6 @@
 output "vpc" {
   value = module.vpc
 }
-output "eks" {
-  value = module.eks
-}
+# output "eks" {
+#   value = module.eks
+# }

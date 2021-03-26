@@ -7,5 +7,6 @@ resource "aws_db_instance" "hello_world_db" {
   name                 = "hello_world"
   username             = "drew"
   password             = "hello_word_db_1234"
+  skip_final_snapshot  = true
   db_subnet_group_name = module.vpc.database_subnet_group_name
 }
