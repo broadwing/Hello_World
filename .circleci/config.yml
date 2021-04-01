@@ -26,7 +26,7 @@ jobs:
           name: build image
           command: | 
             cd ./base-project/backend
-            docker build -t ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_BACKEND}:${CIRCLE_SHA1} .
+            docker build -f backedn.dockerfile -t ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_BACKEND}:${CIRCLE_SHA1} .
       - run: 
           name: push images
           command: | 
@@ -36,6 +36,9 @@ jobs:
             docker push ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_BACKEND}:${CIRCLE_SHA1}
             docker tag ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_BACKEND}:${CIRCLE_SHA1} ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_BACKEND}:latest
             docker push ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_BACKEND}:latest
+            docker push ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_CELERY}:${CIRCLE_SHA1}
+            docker tag ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_CELERY}:${CIRCLE_SHA1} ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_CELERY}:latest
+            docker push ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_CELERY}:latest
 workflows:
   build-and-push: 
     jobs:

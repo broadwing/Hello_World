@@ -15,3 +15,12 @@ resource "aws_ecr_repository" "hello_world_repo-backend" {
     scan_on_push = true
   }
 }
+
+resource "aws_ecr_repository" "hello_world_repo-celery" {
+  name                 = "hello-world-demo-celery"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
