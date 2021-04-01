@@ -26,7 +26,12 @@ jobs:
           name: build image
           command: | 
             cd ./base-project/backend
-            docker build -f backedn.dockerfile -t ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_BACKEND}:${CIRCLE_SHA1} .
+            docker build -f backend.dockerfile -t ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_BACKEND}:${CIRCLE_SHA1} .
+      - run: 
+          name: build image
+          command: | 
+            cd ./base-project/backend
+            docker build -f celeryworker.dockerfile -t ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_CELERY}:${CIRCLE_SHA1} .
       - run: 
           name: push images
           command: | 
