@@ -2,7 +2,7 @@ resource "aws_db_instance" "hello_world_db" {
   apply_immediately    = true
   allocated_storage    = 10
   engine               = "postgres"
-  engine_version       = "11.6"
+  engine_version       = "11.10"
   instance_class       = "db.t2.micro"
   name                 = "hello_world"
   username             = "drew"

@@ -23,11 +23,19 @@ jobs:
             cd ./base-project/frontend
             docker build -t ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME}:${CIRCLE_SHA1} .
       - run: 
+          name: build image
+          command: | 
+            cd ./base-project/backend
+            docker build -t ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_BACKEND}:${CIRCLE_SHA1} .
+      - run: 
           name: push images
           command: | 
             docker push ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME}:${CIRCLE_SHA1}
             docker tag ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME}:${CIRCLE_SHA1} ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME}:latest
             docker push ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME}:latest
+            docker push ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_BACKEND}:${CIRCLE_SHA1}
+            docker tag ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_BACKEND}:${CIRCLE_SHA1} ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_BACKEND}:latest
+            docker push ${AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME_BACKEND}:latest
 workflows:
   build-and-push: 
     jobs:
