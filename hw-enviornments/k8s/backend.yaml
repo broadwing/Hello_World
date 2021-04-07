@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hw-backend
+spec:
+  selector:
+    matchLabels:
+      app: hw-backend
+  template:
+    metadata: 
+      labels: 
+        app: hw-backend
+    spec:
+      containers:
+      - name: hw-backend
+        image: 599908802495.dkr.ecr.us-east-1.amazonaws.com/hello-world-demo-backend
+        ports:
+          - name: hw-backend
+            containerPort: 80
+            protocol: TCP
+        env:
+          - name: PROJECT_NAME
+            value: HW Demo
+          - name: SERVER_NAME
+            value: demo-api.dl.broadwing.io
+          - name: SERVER_HOST
+            value: https://demo-api.dl.broadwing.io
+          - name: SENTRY_DSN
+            value: ""
+          - name: POSTGRES_SERVER
+            value: terraform-20210326225217962500000001.coc183vggxvt.us-east-1.rds.amazonaws.com 
+          - name: BACKEND_CORS_ORIGINS
+            value: '["https://demo.dl.broadwing.io"]'
+        envFrom:
+          - secretRef:
+              name: helloworld
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hw-backend
+  labels:
+    app: hw-backend
+spec:
+  type: NodePort
+  selector:
+    app: hw-backend
+  ports:
+    - port: 80

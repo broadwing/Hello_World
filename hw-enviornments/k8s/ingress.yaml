@@ -1,0 +1,35 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: hw-frontend
+  namespace: "default"
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/group.name: public
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/subnets: subnet-09b63ddc9dd314aa6,subnet-04bf16d6fc39bea58
+    alb.ingress.kubernetes.io/security-groups: sg-07860b5df4d45d69d,sg-068e58fa196cf0ab0
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:599908802495:certificate/1f092ef1-b06c-4b96-a53d-9a2d31d4ca12
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/success-codes: 200,403,404
+    # Use kube-proxy health check
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+    alb.ingress.kubernetes.io/healthcheck-port: "10256"
+  labels:
+    app: hw-frontend
+spec:
+  rules:
+    - host: demo.dl.broadwing.io
+      http:
+        paths:
+          - path: /*
+            backend:
+              serviceName: hw-frontend
+              servicePort: 80
+    - host: demo-api.dl.broadwing.io
+      http:
+        paths:
+          - path: /*
+            backend:
+              serviceName: hw-backend
+              servicePort: 80

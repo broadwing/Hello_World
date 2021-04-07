@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hw-frontend
+spec:
+  selector:
+    matchLabels:
+      app: hw-frontend
+  template:
+    metadata: 
+      labels: 
+        app: hw-frontend
+    spec:
+      containers:
+      - name: hw-frontend
+        image: 599908802495.dkr.ecr.us-east-1.amazonaws.com/hello-world-demo-repo:405a36f46b408c4acc8c9b1ece70ba9309fabc5f
+        ports:
+          - name: hw-frontend
+            containerPort: 80
+            protocol: TCP
+        env:
+          - name: VUE_APP_DOMAIN_PROD
+            value: todo
+          - name: VUE_APP_ENV
+            value: "production"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hw-frontend
+  labels:
+    app: hw-frontend
+spec:
+  type: NodePort
+  selector:
+    app: hw-frontend
+  ports:
+    - port: 80
