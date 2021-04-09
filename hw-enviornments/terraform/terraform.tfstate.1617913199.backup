@@ -1,7 +1,7 @@
 {
   "version": 4,
   "terraform_version": "0.13.6",
-  "serial": 734,
+  "serial": 733,
   "lineage": "3c67b675-6c4a-2b1b-b955-c5291f3c50e8",
   "outputs": {
     "vpc": {
@@ -1498,6 +1498,35 @@
             "module.vpc.aws_vpc.this",
             "module.vpc.aws_vpc_ipv4_cidr_block_association.this"
           ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_route53_zone",
+      "name": "dl",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "comment": "Managed by Terraform",
+            "delegation_set_id": "",
+            "force_destroy": false,
+            "id": "Z10304282YLAA9TKVHGQD",
+            "name": "dl.broadwing.io",
+            "name_servers": [
+              "ns-1154.awsdns-16.org",
+              "ns-1661.awsdns-15.co.uk",
+              "ns-188.awsdns-23.com",
+              "ns-874.awsdns-45.net"
+            ],
+            "tags": {
+              "Environment": "demo"
+            },
+            "vpc": [],
+            "zone_id": "Z10304282YLAA9TKVHGQD"
+          }
         }
       ]
     },

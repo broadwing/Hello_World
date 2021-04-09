@@ -1,0 +1,174 @@
+version: 2.1
+executors:
+  ci_executor:
+    docker:
+      - image: circleci/buildpack-deps:stretch
+        auth:
+          username: $DOCKER_USERNAME
+          password: $DOCKER_PASSWORD
+    environment:
+      BASH_ENV: workspace/env
+commands:
+  deploy:
+    description: "Deploy job"
+    parameters:
+      environment:
+        type: string
+    steps:
+      - run:
+          name: Install aws
+          command: |
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+      - run:
+          name: Install kubectl
+          command: |
+            mkdir -p /home/circleci/.local/bin
+            wget https://storage.googleapis.com/kubernetes-release/release/v1.13.0/bin/linux/amd64/kubectl -O /home/circleci/.local/bin/kubectl
+            chmod +x  /home/circleci/.local/bin/kubectl
+      - run:
+          name: Auth kubectl with environment
+          command: |
+            aws eks --region us-east-1 update-kubeconfig --name << parameters.environment >> --alias << parameters.environment >>
+            echo "<< parameters.environment >> deployments"
+            kubectl get deployments --context << parameters.environment >>
+      - run:
+          name: Deploy Server
+          command: |
+            IMAGE="broadwing/ci_falcon_lite_server:$CIRCLE_SHA1"
+            PATCH='{"spec":{"template":{"spec":{"initContainers":[{"name":"db-migrate","image":"'$IMAGE'"}], "containers":[{"name":"server","image":"'$IMAGE'"}]}}}}'
+            echo $PATCH
+            kubectl patch deployment falcon-lite-server -p "$PATCH"
+            kubectl rollout status -w deployment falcon-lite-server
+      - run:
+          name: Deploy Web
+          command: |
+            IMAGE="broadwing/ci_falcon_lite_web:$CIRCLE_SHA1"
+            PATCH='{"spec":{"template":{"spec":{"containers":[{"name":"web","image":"'$IMAGE'"}]}}}}'
+            echo $PATCH
+            kubectl patch deployment falcon-lite-web -p "$PATCH"
+            kubectl rollout status -w deployment falcon-lite-web
+jobs:
+  build:
+    executor: ci_executor
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Set Tag
+          command: |
+              if [ "${CIRCLE_BRANCH}" = "master" ]; then
+                TAG="latest"
+              else
+                # Replace '/' with -
+                TAG=$(echo $CIRCLE_BRANCH | sed -e 's/\//-/g')
+              fi
+              mkdir -p workspace
+              echo "export CI_DOCKER_TAG=\"$TAG\"" >> $BASH_ENV
+      - run:
+          name: Pull previous images for cache
+          command: |
+            docker login --username "${DOCKER_USERNAME}" --password "${DOCKER_PASSWORD}"
+            docker pull broadwing/ci_falcon_lite_server:$CI_DOCKER_TAG || true
+            docker pull broadwing/ci_falcon_lite_server:latest || true
+            docker pull broadwing/ci_falcon_lite_web:$CI_DOCKER_TAG || true
+            docker pull broadwing/ci_falcon_lite_web:latest || true
+      - run:
+          name: Build server
+          command: |
+            cd server
+            docker build -t broadwing/ci_falcon_lite_server:$CIRCLE_SHA1 \
+              --cache-from broadwing/ci_falcon_lite_server:$CI_DOCKER_TAG \
+              --cache-from broadwing/ci_falcon_lite_server:latest \
+              .
+      - run:
+          name: Build web
+          command: |
+            cd web
+            docker build -t broadwing/ci_falcon_lite_web:$CIRCLE_SHA1 \
+              --cache-from broadwing/ci_falcon_lite_web:$CI_DOCKER_TAG \
+              --cache-from broadwing/ci_falcon_lite_web:latest \
+              --cache-from broadwing/ci_falcon_lite_server:$CI_DOCKER_TAG \
+              --cache-from broadwing/ci_falcon_lite_server:latest \
+              .
+      - run:
+          name: Persist docker images
+          command: |
+            docker save -o workspace/server.docker.tar.gz broadwing/ci_falcon_lite_server:$CIRCLE_SHA1
+            docker save -o workspace/web.docker.tar.gz broadwing/ci_falcon_lite_web:$CIRCLE_SHA1
+      - persist_to_workspace:
+          root: workspace
+          paths:
+            - env
+            - server.docker.tar.gz
+            - web.docker.tar.gz
+  push:
+    executor: ci_executor
+    steps:
+      - attach_workspace:
+          at: workspace
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Load docker images
+          command: |
+            ls -al workspace/
+            docker load -i workspace/server.docker.tar.gz
+            docker load -i workspace/web.docker.tar.gz
+            docker images
+      - run:
+          name: Push Images
+          command: |
+            docker login --username "${DOCKER_USERNAME}" --password "${DOCKER_PASSWORD}"
+            echo "Pushing tags $CIRCLE_SHA1"
+            docker push broadwing/ci_falcon_lite_server:$CIRCLE_SHA1
+            docker push broadwing/ci_falcon_lite_web:$CIRCLE_SHA1
+            echo "Pushing tags $CI_DOCKER_TAG"
+            docker tag broadwing/ci_falcon_lite_server:$CIRCLE_SHA1 broadwing/ci_falcon_lite_server:$CI_DOCKER_TAG
+            docker tag broadwing/ci_falcon_lite_web:$CIRCLE_SHA1 broadwing/ci_falcon_lite_web:$CI_DOCKER_TAG
+            docker push broadwing/ci_falcon_lite_server:$CI_DOCKER_TAG
+            docker push broadwing/ci_falcon_lite_web:$CI_DOCKER_TAG
+  deploy-stage:
+    executor: ci_executor
+    steps:
+      - deploy:
+          environment: stage
+  deploy-prod:
+    executor: ci_executor
+    steps:
+      - deploy:
+          environment: prod
+workflows:
+  version: 2
+  build-test-deploy:
+    jobs:
+      - build
+      - push:
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - master
+                - develop
+      - deploy-stage:
+          requires:
+            - push
+          filters:
+            branches:
+              only:
+                - master
+                - develop
+      - approve-prod-deploy:
+          type: approval
+          requires:
+            - deploy-stage
+          filters:
+            branches:
+              only:
+                - master
+      - deploy-prod:
+          requires:
+            - approve-prod-deploy

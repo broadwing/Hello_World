@@ -36,3 +36,4 @@ spec:
     app: hw-frontend
   ports:
     - port: 80
+
